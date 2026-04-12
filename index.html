@@ -3,174 +3,356 @@
 <head>
     <meta charset="UTF-8">
     <title>Sync Studio</title>
-    <script src="assets/js/wavesurfer.min.js"></script>
+    <script src="wavesurfer.min.js"></script>
     <style id="mainStyles">
         :root { --bg: #09090b; --panel: #18181b; --border: #27272a; --accent: #10b981; --text: #fafafa; --dim: #71717a; }
         body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; margin: 0; padding: 0; height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
         
-        /* Global Toolbox (Fixed at Top) */
         .global-header { background: #000; border-bottom: 1px solid var(--border); padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; z-index: 100; }
         .kbd-legend { display: flex; gap: 12px; font-size: 10px; color: var(--dim); text-transform: uppercase; }
         kbd { background: #27272a; color: #fff; padding: 2px 4px; border-radius: 3px; font-family: monospace; }
 
-        /* Main Layout */
-        .main-container { display: grid; grid-template-columns: 1fr 450px; gap: 15px; padding: 15px; flex-grow: 1; overflow: hidden; }
+        .main-container { display: flex; flex-direction: column; gap: 15px; padding: 15px; flex-grow: 1; overflow: hidden; min-height: 0; }
+        .bottom-row { display: grid; grid-template-columns: 1fr 450px; gap: 15px; flex: 1; overflow: hidden; min-height: 0; }
         .module { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; display: flex; flex-direction: column; overflow: hidden; }
-        
-        /* Module Toolbox */
-        .module-toolbar { background: #27272a; padding: 8px 12px; display: flex; gap: 8px; align-items: center; border-bottom: 1px solid var(--border); }
+        .bottom-row .module { height: 100%; }
+
+        .module-toolbar { background: #27272a; padding: 8px 12px; display: flex; gap: 8px; align-items: center; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
         .module-label { font-size: 10px; font-weight: bold; color: var(--dim); text-transform: uppercase; margin-right: auto; }
 
-        /* Media & Editor */
-        #waveform { height: 80px; background: #000; border-bottom: 1px solid var(--border); }
-        video { width: 100%; height: auto; background: #000; max-height: 400px; }
+        #mediaContainer { position: relative; background: #000; display: flex; align-items: center; justify-content: center; height: 240px; }
+        video, #ytPlayer { width: 100%; height: 100%; position: absolute; top: 0; left: 0; }
+
+        .transcript-bar { background: #1a0808; border-bottom: 1px solid #7f1d1d; padding: 8px 14px; display: flex; align-items: center; gap: 10px; min-height: 38px; }
+        .transcript-dot { width: 8px; height: 8px; border-radius: 50%; background: #ef4444; flex-shrink: 0; animation: blink 1s ease-in-out infinite; }
+        .transcript-text { color: #fca5a5; font-family: 'JetBrains Mono', monospace; font-size: 12px; flex: 1; }
+        @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.25} }
+        .btn-mic-on { background: #ef4444 !important; color: #fff !important; border-color: #ef4444 !important; }
+        
         textarea { flex-grow: 1; background: #000; color: #fff; border: none; padding: 15px; font-family: 'JetBrains Mono', monospace; font-size: 13px; outline: none; line-height: 1.6; resize: none; }
         .output-text { color: var(--accent); }
 
-        /* Buttons */
         .btn { background: var(--accent); color: #000; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: bold; }
         .btn-blue { background: #3b82f6; color: #fff; }
-        .btn-danger { background: transparent; border: 1px solid #ef4444; color: #ef4444; }
         .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--dim); }
         .hidden { display: none; }
+        select { background: #000; color: var(--dim); border: 1px solid var(--border); font-size: 10px; padding: 2px; }
     </style>
 </head>
 <body>
 
     <header class="global-header">
-        <div style="display:flex; align-items:center; gap:15px;">
-            <h1 style="margin:0; font-size: 16px; color: var(--accent);">PRO SYNC STUDIO v4</h1>
-            <button class="btn btn-blue" onclick="setupMultiMonitor()">Auto-Assign Monitors</button>
-        </div>
+        <h1 style="margin:0; font-size: 16px; color: var(--accent);">PRO SYNC STUDIO v5</h1>
         <div class="kbd-legend">
             <span><kbd>ENTER</kbd> Sync</span>
             <span><kbd>B</kbd> Blank</span>
             <span><kbd>S</kbd> Skip</span>
+            <span><kbd>Z</kbd> Undo</span>
             <span><kbd>SPACE</kbd> Play/Pause</span>
             <span><kbd>J/L</kbd> ±5s</span>
-            <span><kbd>CTRL+Z</kbd> Undo</span>
+            <span><kbd>M</kbd> Mic</span>
         </div>
     </header>
 
     <div class="main-container" id="workstation">
-        
-        <div style="display:flex; flex-direction:column; gap:15px; overflow:hidden;">
-            
-            <div id="videoModule" class="module">
-                <div class="module-toolbar">
-                    <span class="module-label">Video Monitor</span>
-                    <button class="btn btn-outline" onclick="popOut('videoModule', 1)">Pop-out</button>
-                </div>
-                <video id="player" controls></video>
-                <div id="waveform"></div>
-            </div>
 
-            <div id="sourceModule" class="module" style="flex-grow: 1;">
-                <div class="module-toolbar">
-                    <span class="module-label">Source Script</span>
-                    <input type="file" id="mediaInput" class="hidden" accept="video/*,audio/*">
-                    <button class="btn" onclick="document.getElementById('mediaInput').click()">Load Media</button>
-                    
-                    <input type="file" id="subImport" class="hidden" accept=".srt,.lrc,.ass">
-                    <button class="btn" onclick="document.getElementById('subImport').click()">Import File</button>
-                    
-                    <button class="btn btn-outline" onclick="popOut('sourceModule', 2)">Pop-out</button>
-                </div>
-                <textarea id="sourceText" placeholder="Paste lyrics, SRT, or ASS dialogue here..."></textarea>
+        <!-- VIDEO: full-width top row -->
+        <div id="videoModule" class="module" style="flex-shrink:0;">
+            <div class="module-toolbar">
+                <span class="module-label">Monitor</span>
+                <input type="text" id="ytUrl" placeholder="YouTube URL..." style="background:#000; border:1px solid var(--border); color:#fff; font-size:10px; padding:4px; width:200px;">
+                <button class="btn btn-blue" onclick="loadYT()">Load YT</button>
+                <input type="file" id="mediaInput" class="hidden" accept="video/*,audio/*">
+                <button class="btn" onclick="document.getElementById('mediaInput').click()">Local File</button>
+                <select id="speedRate" onchange="setRate(this.value)">
+                    <option value="0.5">0.5x</option>
+                    <option value="0.75">0.75x</option>
+                    <option value="1" selected>1.0x</option>
+                    <option value="1.5">1.5x</option>
+                    <option value="2">2.0x</option>
+                </select>
+                <button class="btn btn-outline" onclick="togglePlay()">Play/Pause</button>
+                <button class="btn btn-outline" onclick="popOut('videoModule')">Pop-out</button>
             </div>
+            <div id="mediaContainer">
+                <video id="localPlayer" controls></video>
+                <div id="ytPlayer" class="hidden"></div>
+            </div>
+            <div id="waveform"></div>
         </div>
 
-        <div id="outputModule" class="module">
-            <div class="module-toolbar">
-                <span class="module-label">Sync Output</span>
-                <button class="btn btn-outline" onclick="smartStrip()">Strip Timestamps</button>
-                <button class="btn" onclick="download('srt')">Export SRT</button>
-                <button class="btn" onclick="download('lrc')">Export LRC</button>
+        <!-- BOTTOM ROW: source + output -->
+        <div class="bottom-row">
+
+            <div id="sourceModule" class="module">
+                <div class="module-toolbar">
+                    <span class="module-label">Source</span>
+                    <input type="file" id="subImport" class="hidden" accept=".srt,.lrc,.ass">
+                    <button class="btn" onclick="document.getElementById('subImport').click()">Import Script</button>
+                    <select id="speechLang">
+                        <option value="en-US">EN</option>
+                        <option value="es-ES">ES</option>
+                        <option value="fr-FR">FR</option>
+                        <option value="de-DE">DE</option>
+                        <option value="pt-BR">PT-BR</option>
+                        <option value="ja-JP">JA</option>
+                        <option value="zh-CN">ZH</option>
+                        <option value="ko-KR">KO</option>
+                        <option value="it-IT">IT</option>
+                        <option value="ru-RU">RU</option>
+                        <option value="ar-SA">AR</option>
+                    </select>
+                    <button class="btn btn-outline" id="micBtn" onclick="toggleMic()">Mic</button>
+                    <button class="btn btn-outline" id="autoBtn" onclick="toggleAuto()" title="Auto-submit on silence">Auto</button>
+                    <button class="btn btn-outline" onclick="popOut('sourceModule')">Pop-out</button>
+                </div>
+                <div id="liveTranscriptBar" class="transcript-bar hidden">
+                    <div class="transcript-dot"></div>
+                    <span class="transcript-text" id="liveTranscript">Listening...</span>
+                </div>
+                <textarea id="sourceText" placeholder="Paste script here, or use Mic to transcribe live..."></textarea>
             </div>
-            <textarea id="outputArea" class="output-text" placeholder="Resulting file..."></textarea>
+
+            <div id="outputModule" class="module">
+                <div class="module-toolbar">
+                    <span class="module-label">Output</span>
+                    <button class="btn btn-outline" onclick="smartStrip()">Strip</button>
+                    <button class="btn" onclick="download('srt')">SRT</button>
+                    <button class="btn" onclick="download('lrc')">LRC</button>
+                    <button class="btn btn-outline" onclick="popOut('outputModule')">Pop-out</button>
+                </div>
+                <textarea id="outputArea" class="output-text"></textarea>
+            </div>
+
         </div>
 
     </div>
 
 <script>
-    const player = document.getElementById('player');
+    // --- STATE & UTILS ---
+    let mode = 'local'; // 'local' or 'yt'
+    let ytPlayer = null;
+    let history = [];
+    let popups = [];
+    let transcribing = false;
+    let recognition = null;
+    let liveTranscript = '';
+    let pendingFinal = '';
+    const localPlayer = document.getElementById('localPlayer');
     const sourceText = document.getElementById('sourceText');
     const outputArea = document.getElementById('outputArea');
     const styles = document.getElementById('mainStyles').textContent;
-    let history = [];
 
-    // --- WAVEFORM ---
-    const ws = WaveSurfer.create({
-        container: '#waveform',
-        waveColor: '#3f3f46',
-        progressColor: '#10b981',
-        height: 80,
-        media: player
+    // Close all child popups when main window closes
+    window.addEventListener('beforeunload', () => {
+        popups.forEach(p => { try { if (!p.closed) p.close(); } catch(e) {} });
     });
 
-    // --- WINDOW MANAGEMENT (MULTI-MONITOR) ---
-    async function setupMultiMonitor() {
-        if (!window.getScreenDetails) return alert("Please use Chrome/Edge and enable Window Management permissions.");
-        const details = await window.getScreenDetails();
-        if (details.screens.length > 1) popOut('videoModule', 1, details.screens[1]);
-        if (details.screens.length > 2) popOut('sourceModule', 2, details.screens[2]);
+    // --- YOUTUBE API ---
+    const tag = document.createElement('script');
+    tag.src = "https://www.youtube.com/iframe_api";
+    document.head.appendChild(tag);
+    function onYouTubeIframeAPIReady() {}
+
+    function loadYT() {
+        const url = document.getElementById('ytUrl').value;
+        const id = url.split('v=')[1]?.split('&')[0] || url;
+        mode = 'yt';
+        localPlayer.classList.add('hidden');
+        document.getElementById('ytPlayer').classList.remove('hidden');
+        if (ytPlayer) ytPlayer.destroy();
+        ytPlayer = new YT.Player('ytPlayer', {
+            height: '100%', width: '100%', videoId: id,
+            playerVars: { 'autoplay': 1, 'controls': 1 }
+        });
     }
 
-    function popOut(elementId, screenIndex, screenObj = null) {
+    // --- MEDIA HELPERS ---
+    function getTime() {
+        return mode === 'local' ? localPlayer.currentTime : ytPlayer.getCurrentTime();
+    }
+
+    function togglePlay() {
+        if (mode === 'local') localPlayer.paused ? localPlayer.play() : localPlayer.pause();
+        else ytPlayer.getPlayerState() === 1 ? ytPlayer.pauseVideo() : ytPlayer.playVideo();
+    }
+
+    function setRate(val) {
+        if (mode === 'local') localPlayer.playbackRate = parseFloat(val);
+        else ytPlayer.setPlaybackRate(parseFloat(val));
+    }
+
+    // --- BOOMERANG POP-OUT ---
+    function popOut(elementId) {
         const el = document.getElementById(elementId);
-        let feats = "width=1200,height=800";
-        if (screenObj) feats = `left=${screenObj.availLeft},top=${screenObj.availTop},width=${screenObj.availWidth},height=${screenObj.availHeight}`;
-        
-        const popup = window.open('', elementId, feats);
-        popup.document.head.innerHTML = `<style>${styles}</style>`;
+        const placeholder = document.createElement('div');
+        placeholder.id = elementId + "-ghost";
+        el.replaceWith(placeholder);
+
+        const popup = window.open('', elementId, 'width=1000,height=700,resizable=yes');
+        popups.push(popup);
+        popup.document.head.innerHTML = `<title>${elementId}</title><style>body{margin:0;background:#09090b;height:100vh;display:flex;flex-direction:column;}${styles}</style>`;
         popup.document.body.appendChild(el);
-        popup.onkeydown = (e) => window.onkeydown(e); // Sync keys
+
+        popup.onkeydown = (e) => window.onkeydown(e);
         popup.onbeforeunload = () => {
-            if (elementId === 'outputModule') document.getElementById('workstation').appendChild(el);
-            else document.querySelector('.main-container > div').appendChild(el);
+            const ghost = document.getElementById(placeholder.id);
+            if (ghost) ghost.replaceWith(el);
+            popups = popups.filter(p => p !== popup);
         };
     }
 
-    // --- REFINED STRIPPER (Logic for ASS/SRT/LRC) ---
-    function cleanForResync(raw) {
-        return raw.split(/\r?\n/).map(line => {
-            let l = line.trim();
-            if (/^\d+$/.test(l) || l.includes('-->') || l.startsWith('Style:') || l.startsWith('[')) return null;
-            if (l.startsWith('Dialogue:')) return l.split(',').slice(9).join(',');
-            return l.replace(/^\[\d+:\d+\.\d+\]/, '').trim();
-        }).filter(x => x && x.length > 0).join('\n');
+    // --- TRANSCRIPTION ---
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    let autoSubmit = false;
+    // Whisper (Firefox / manual override) state
+    let whisperPipe = null;
+    let mediaStream = null;
+    let recorder = null;
+    let recorderChunks = [];
+    let chunkTimer = null;
+    const CHUNK_MS = 4000;
+
+    const setLiveText = (t) => { document.getElementById('liveTranscript').textContent = t || 'Listening...'; };
+
+    function toggleAuto() {
+        autoSubmit = !autoSubmit;
+        const btn = document.getElementById('autoBtn');
+        btn.textContent = autoSubmit ? 'Auto ON' : 'Auto';
+        btn.classList.toggle('btn-mic-on', autoSubmit);
     }
 
-    function smartStrip() {
-        sourceText.value = cleanForResync(outputArea.value);
-        outputArea.value = "";
+    function toggleMic() { transcribing ? stopMic() : startMic(); }
+
+    function startMic() { SR ? startNativeSR() : startWhisper(); }
+
+    function stopMic() {
+        if (recognition) { recognition.onend = null; recognition.stop(); recognition = null; }
+        if (chunkTimer) { clearTimeout(chunkTimer); chunkTimer = null; }
+        if (recorder && recorder.state !== 'inactive') { recorder.onstop = null; recorder.stop(); }
+        if (mediaStream) { mediaStream.getTracks().forEach(t => t.stop()); mediaStream = null; }
+        recorder = null; recorderChunks = [];
+        transcribing = false; liveTranscript = ''; pendingFinal = '';
+        document.getElementById('micBtn').classList.remove('btn-mic-on');
+        document.getElementById('micBtn').textContent = 'Mic';
+        document.getElementById('liveTranscriptBar').classList.add('hidden');
+        setLiveText('Listening...');
     }
 
-    // --- CORE ACTIONS ---
+    // Central commit — used by all paths (manual Enter, auto SR, Whisper)
+    function commitLine(text) {
+        if (!text.trim()) return;
+        const ts = formatLRC(getTime());
+        outputArea.value += (outputArea.value ? '\n' : '') + `${ts}${text.trim()}`;
+        outputArea.scrollTop = outputArea.scrollHeight;
+        history.push({ type: 'line', text: text.trim() });
+        pendingFinal = ''; liveTranscript = '';
+        setLiveText('Listening...');
+    }
+
+    // --- Native SR (Chrome / Edge) ---
+    function startNativeSR() {
+        recognition = new SR();
+        recognition.continuous = true;
+        recognition.interimResults = true;
+        recognition.lang = document.getElementById('speechLang').value;
+
+        recognition.onresult = (e) => {
+            let interim = '';
+            for (let i = e.resultIndex; i < e.results.length; i++) {
+                const t = e.results[i][0].transcript;
+                if (e.results[i].isFinal) {
+                    if (autoSubmit) { commitLine(t.trim()); return; }
+                    pendingFinal += t + ' ';
+                } else { interim = t; }
+            }
+            liveTranscript = (pendingFinal + interim).trim();
+            setLiveText(liveTranscript || (interim ? interim + '…' : 'Listening...'));
+        };
+
+        recognition.onerror = (e) => { if (e.error !== 'no-speech') console.warn('SR:', e.error); };
+        recognition.onend = () => { if (transcribing) recognition.start(); };
+
+        recognition.start();
+        transcribing = true;
+        document.getElementById('micBtn').classList.add('btn-mic-on');
+        document.getElementById('micBtn').textContent = 'Mic ON';
+        document.getElementById('liveTranscriptBar').classList.remove('hidden');
+    }
+
+    // --- Whisper in-browser (Firefox / any browser via @xenova/transformers) ---
+    async function startWhisper() {
+        const btn = document.getElementById('micBtn');
+        btn.textContent = 'Loading…'; btn.disabled = true;
+        document.getElementById('liveTranscriptBar').classList.remove('hidden');
+
+        try {
+            if (!whisperPipe) {
+                setLiveText('Downloading Whisper model (~39 MB, cached after first use)…');
+                const { pipeline } = await import('https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2');
+                whisperPipe = await pipeline('automatic-speech-recognition', 'Xenova/whisper-tiny');
+            }
+
+            mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            transcribing = true;
+
+            const startChunk = () => {
+                recorderChunks = [];
+                const mime = MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : 'audio/ogg';
+                recorder = new MediaRecorder(mediaStream, { mimeType: mime });
+                recorder.ondataavailable = (e) => { if (e.data.size > 0) recorderChunks.push(e.data); };
+                recorder.onstop = async () => {
+                    if (!recorderChunks.length || !transcribing) return;
+                    const blob = new Blob(recorderChunks, { type: recorder.mimeType });
+                    try {
+                        const ctx = new AudioContext({ sampleRate: 16000 });
+                        const audio = await ctx.decodeAudioData(await blob.arrayBuffer());
+                        const f32 = audio.getChannelData(0);
+                        ctx.close();
+                        const lang = document.getElementById('speechLang').value.split('-')[0];
+                        const res = await whisperPipe(f32, { language: lang });
+                        const text = (res.text || '').replace(/\[BLANK_AUDIO\]/gi, '').trim();
+                        if (text) {
+                            liveTranscript = text;
+                            setLiveText(text);
+                            if (autoSubmit) commitLine(text);
+                        }
+                    } catch (err) { console.warn('Whisper chunk:', err); }
+                    if (transcribing) startChunk();
+                };
+                recorder.start();
+                chunkTimer = setTimeout(() => { if (recorder?.state === 'recording') recorder.stop(); }, CHUNK_MS);
+            };
+
+            startChunk();
+            btn.disabled = false;
+            btn.classList.add('btn-mic-on');
+            btn.textContent = 'Mic ON';
+            setLiveText('Listening…');
+        } catch (err) {
+            btn.disabled = false; btn.textContent = 'Mic';
+            document.getElementById('liveTranscriptBar').classList.add('hidden');
+            console.error(err);
+            alert('Could not start transcription: ' + err.message);
+        }
+    }
+
+    // --- CORE SYNC ---
     const formatLRC = (s) => `[${Math.floor(s/60).toString().padStart(2,'0')}:${(s%60).toFixed(2).padStart(5,'0')}]`;
 
     function syncLine() {
-        const lines = sourceText.value.split('\n');
-        const current = lines.shift()?.trim();
-        if (current === undefined) return;
-        const ts = formatLRC(player.currentTime);
-        outputArea.value += (outputArea.value ? '\n' : '') + `${ts}${current}`;
-        sourceText.value = lines.join('\n');
-        outputArea.scrollTop = outputArea.scrollHeight;
-        history.push({ type: 'line', text: current });
-    }
-
-    function addBlank() {
-        const ts = formatLRC(player.currentTime);
-        outputArea.value += (outputArea.value ? '\n' : '') + `${ts}`;
-        history.push({ type: 'blank' });
-    }
-
-    function skipLine() {
-        const lines = sourceText.value.split('\n');
-        const skipped = lines.shift();
-        sourceText.value = lines.join('\n');
-        history.push({ type: 'skip', text: skipped });
+        if (transcribing && liveTranscript.trim()) {
+            commitLine(liveTranscript.trim()); // commitLine resets buffer + live text
+        } else {
+            const lines = sourceText.value.split('\n');
+            const current = lines.shift()?.trim();
+            if (!current) return;
+            sourceText.value = lines.join('\n');
+            const ts = formatLRC(getTime());
+            outputArea.value += (outputArea.value ? '\n' : '') + `${ts}${current}`;
+            outputArea.scrollTop = outputArea.scrollHeight;
+            history.push({ type: 'line', text: current });
+        }
     }
 
     function undo() {
@@ -186,57 +368,100 @@
         }
     }
 
-    // --- EVENT HANDLERS ---
-    document.getElementById('mediaInput').onchange = (e) => player.src = URL.createObjectURL(e.target.files[0]);
+    // --- SHORTCUTS (Z-UNDO) ---
+    window.onkeydown = (e) => {
+        const typing = document.activeElement.tagName === 'TEXTAREA' || document.activeElement.tagName === 'INPUT';
+        
+        if (e.code === 'Enter') { e.preventDefault(); syncLine(); }
+        if (e.code === 'KeyZ' && !typing) { e.preventDefault(); undo(); }
+        if (e.code === 'KeyB' && !typing) {
+             outputArea.value += (outputArea.value ? '\n' : '') + formatLRC(getTime());
+        }
+        if (e.code === 'KeyS' && !typing) {
+            const lines = sourceText.value.split('\n');
+            const skipped = lines.shift();
+            sourceText.value = lines.join('\n');
+            history.push({ type: 'skip', text: skipped });
+        }
+        if (e.code === 'Space' && !typing) { e.preventDefault(); togglePlay(); }
+        if (e.code === 'KeyJ' && !typing) {
+            if (mode === 'local') localPlayer.currentTime -= 5;
+            else ytPlayer.seekTo(ytPlayer.getCurrentTime() - 5);
+        }
+        if (e.code === 'KeyL' && !typing) {
+            if (mode === 'local') localPlayer.currentTime += 5;
+            else ytPlayer.seekTo(ytPlayer.getCurrentTime() + 5);
+        }
+        if (e.code === 'KeyM' && !typing) { e.preventDefault(); toggleMic(); }
+    };
+
+    // --- STORAGE & STRIP ---
+    setInterval(() => {
+        localStorage.setItem('sync_source', sourceText.value);
+        localStorage.setItem('sync_output', outputArea.value);
+    }, 5000);
+
+    window.onload = () => {
+        if (localStorage.getItem('sync_source')) sourceText.value = localStorage.getItem('sync_source');
+        if (localStorage.getItem('sync_output')) outputArea.value = localStorage.getItem('sync_output');
+    };
+
+    function smartStrip() {
+        sourceText.value = outputArea.value.replace(/\[.*?\]/g, '').trim();
+        outputArea.value = "";
+    }
+
+    document.getElementById('mediaInput').onchange = (e) => {
+        mode = 'local';
+        document.getElementById('ytPlayer').classList.add('hidden');
+        localPlayer.classList.remove('hidden');
+        localPlayer.src = URL.createObjectURL(e.target.files[0]);
+    };
+
     document.getElementById('subImport').onchange = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const ext = file.name.split('.').pop().toLowerCase();
         const reader = new FileReader();
         reader.onload = (ev) => {
-            const content = ev.target.result;
-            if (confirm("Strip timestamps and start clean sync?")) sourceText.value = cleanForResync(content);
-            else outputArea.value = content;
+            const raw = ev.target.result;
+            let lines = [];
+            if (ext === 'lrc') {
+                lines = raw.split('\n')
+                    .map(l => l.replace(/\[[\d:.]+\]/g, '').trim())
+                    .filter(Boolean);
+            } else if (ext === 'srt') {
+                lines = raw.split('\n').filter(l => {
+                    l = l.trim();
+                    if (!l) return false;
+                    if (/^\d+$/.test(l)) return false;               // sequence number
+                    if (/\d{2}:\d{2}:\d{2},\d{3}/.test(l)) return false; // timestamp
+                    return true;
+                });
+            } else if (ext === 'ass') {
+                raw.split('\n').forEach(l => {
+                    if (l.startsWith('Dialogue:')) {
+                        const parts = l.split(',');
+                        if (parts.length >= 10) {
+                            const text = parts.slice(9).join(',')
+                                .replace(/\{[^}]*\}/g, '')  // strip ASS inline tags
+                                .replace(/\\N/gi, ' ')
+                                .trim();
+                            if (text) lines.push(text);
+                        }
+                    }
+                });
+            } else {
+                // Unknown format: dump raw text
+                lines = raw.split('\n').map(l => l.trim()).filter(Boolean);
+            }
+            sourceText.value = lines.join('\n');
         };
-        reader.readAsText(e.target.files[0]);
+        reader.readAsText(file);
+        e.target.value = ''; // allow re-import of same file
     };
 
-    // --- SHORTCUTS ENGINE ---
-    window.onkeydown = (e) => {
-        const isEditingOutput = document.activeElement === outputArea;
-        const isEditingSource = document.activeElement === sourceText;
-        
-        // Disable shortcuts if editing output to allow manual typing
-        if (isEditingOutput) return;
-
-        // Enter: Sync
-        if (e.code === 'Enter') {
-            e.preventDefault();
-            syncLine();
-        }
-        // B: Blank
-        if (e.code === 'KeyB' && !isEditingSource) {
-            e.preventDefault();
-            addBlank();
-        }
-        // S: Skip
-        if (e.code === 'KeyS' && !isEditingSource) {
-            e.preventDefault();
-            skipLine();
-        }
-        // J/L: Seek
-        if (e.code === 'KeyJ' && !isEditingSource) player.currentTime -= 5;
-        if (e.code === 'KeyL' && !isEditingSource) player.currentTime += 5;
-        // Space: Play/Pause
-        if (e.code === 'Space' && !isEditingSource) {
-            e.preventDefault();
-            player.paused ? player.play() : player.pause();
-        }
-        // Ctrl+Z: Undo
-        if (e.ctrlKey && e.code === 'KeyZ') {
-            e.preventDefault();
-            undo();
-        }
-    };
-
-    // --- DOWNLOAD ---
+    // --- EXPORT (Same robust logic) ---
     function download(type) {
         let out = outputArea.value;
         if (type === 'srt') {
@@ -247,7 +472,7 @@
                 if (!match) return;
                 const start = parseInt(match[1])*60 + parseFloat(match[2]);
                 const text = line.replace(/\[.*\]/, '').trim();
-                let end = start + 2.0;
+                let end = start + 2.5;
                 if(lines[i+1]) {
                     const nMatch = lines[i+1].match(/\[(\d+):(\d+\.\d+)\]/);
                     if(nMatch) end = Math.min(end, (parseInt(nMatch[1])*60 + parseFloat(nMatch[2])) - 0.05);
