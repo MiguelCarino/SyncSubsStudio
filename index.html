@@ -5,40 +5,41 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sync Studio</title>
-    <script src="wavesurfer.min.js"></script>
+    <link rel="stylesheet" href="fonts/carino-fonts.css">
     <style id="mainStyles">
-        :root { --bg: #09090b; --panel: #18181b; --border: #27272a; --accent: #10b981; --text: #fafafa; --dim: #71717a; }
-        body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; margin: 0; padding: 0; height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
-        
-        .global-header { background: #000; border-bottom: 1px solid var(--border); padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; z-index: 100; }
+        :root { --bg: #050505; --panel: #0b0b0b; --border: #262626; --accent: #eab308; --text: #fff; --dim: #a3a3a3; --err: #ef4444; }
+        body { background: var(--bg); color: var(--text); font-family: 'IBM Plex Sans', system-ui, sans-serif; margin: 0; padding: 0; height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
+
+        .global-header { background: #050505; border-bottom: 1px solid var(--border); padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; z-index: 100; }
         .kbd-legend { display: flex; gap: 12px; font-size: 10px; color: var(--dim); text-transform: uppercase; }
-        kbd { background: #27272a; color: #fff; padding: 2px 4px; border-radius: 3px; font-family: monospace; }
+        kbd { background: #262626; color: #fff; padding: 2px 4px; border-radius: 3px; font-family: 'IBM Plex Mono', monospace; }
 
         .main-container { display: flex; flex-direction: column; gap: 15px; padding: 15px; flex-grow: 1; overflow: hidden; min-height: 0; }
         .bottom-row { display: grid; grid-template-columns: 1fr 450px; gap: 15px; flex: 1; overflow: hidden; min-height: 0; }
         .module { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; display: flex; flex-direction: column; overflow: hidden; }
         .bottom-row .module { height: 100%; }
 
-        .module-toolbar { background: #27272a; padding: 8px 12px; display: flex; gap: 8px; align-items: center; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+        .module-toolbar { background: #0d0d0d; padding: 8px 12px; display: flex; gap: 8px; align-items: center; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
         .module-label { font-size: 10px; font-weight: bold; color: var(--dim); text-transform: uppercase; margin-right: auto; }
 
-        #mediaContainer { position: relative; background: #000; display: flex; align-items: center; justify-content: center; height: 240px; }
+        #mediaContainer { position: relative; background: #050505; display: flex; align-items: center; justify-content: center; height: 240px; }
         video, #ytPlayer { width: 100%; height: 100%; position: absolute; top: 0; left: 0; }
 
-        .transcript-bar { background: #1a0808; border-bottom: 1px solid #7f1d1d; padding: 8px 14px; display: flex; align-items: center; gap: 10px; min-height: 38px; }
-        .transcript-dot { width: 8px; height: 8px; border-radius: 50%; background: #ef4444; flex-shrink: 0; animation: blink 1s ease-in-out infinite; }
-        .transcript-text { color: #fca5a5; font-family: 'JetBrains Mono', monospace; font-size: 12px; flex: 1; }
+        .transcript-bar { background: rgba(239,68,68,.06); border-bottom: 1px solid rgba(239,68,68,.35); padding: 8px 14px; display: flex; align-items: center; gap: 10px; min-height: 38px; }
+        .transcript-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--err); flex-shrink: 0; animation: blink 1s ease-in-out infinite; }
+        .transcript-text { color: var(--err); font-family: 'IBM Plex Mono', monospace; font-size: 12px; flex: 1; }
         @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.25} }
-        .btn-mic-on { background: #ef4444 !important; color: #fff !important; border-color: #ef4444 !important; }
-        
-        textarea { flex-grow: 1; background: #000; color: #fff; border: none; padding: 15px; font-family: 'JetBrains Mono', monospace; font-size: 13px; outline: none; line-height: 1.6; resize: none; }
+        .btn-mic-on { background: var(--err) !important; color: #fff !important; border-color: var(--err) !important; }
+
+        textarea { flex-grow: 1; background: #050505; color: #fff; border: none; padding: 15px; font-family: 'IBM Plex Mono', monospace; font-size: 13px; outline: none; line-height: 1.6; resize: none; }
         .output-text { color: var(--accent); }
 
-        .btn { background: var(--accent); color: #000; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: bold; }
-        .btn-blue { background: #3b82f6; color: #fff; }
+        .btn { background: var(--accent); color: #050505; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: bold; }
+        .btn:hover { background: #fbbf24; }
         .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--dim); }
+        .btn-outline:hover { background: transparent; border-color: var(--accent); color: var(--accent); }
         .hidden { display: none; }
-        select { background: #000; color: var(--dim); border: 1px solid var(--border); font-size: 10px; padding: 2px; }
+        select { background: #050505; color: var(--dim); border: 1px solid var(--border); font-size: 10px; padding: 2px; }
     </style>
 </head>
 <body>
@@ -62,8 +63,8 @@
         <div id="videoModule" class="module" style="flex-shrink:0;">
             <div class="module-toolbar">
                 <span class="module-label">Monitor</span>
-                <input type="text" id="ytUrl" placeholder="YouTube URL..." style="background:#000; border:1px solid var(--border); color:#fff; font-size:10px; padding:4px; width:200px;">
-                <button class="btn btn-blue" onclick="loadYT()">Load YT</button>
+                <input type="text" id="ytUrl" placeholder="YouTube URL..." style="background:#050505; border:1px solid var(--border); color:#fff; font-size:10px; padding:4px; width:200px;">
+                <button class="btn" onclick="loadYT()">Load YT</button>
                 <input type="file" id="mediaInput" class="hidden" accept="video/*,audio/*">
                 <button class="btn" onclick="document.getElementById('mediaInput').click()">Local File</button>
                 <select id="speedRate" onchange="setRate(this.value)">
@@ -80,7 +81,6 @@
                 <video id="localPlayer" controls></video>
                 <div id="ytPlayer" class="hidden"></div>
             </div>
-            <div id="waveform"></div>
         </div>
 
         <!-- BOTTOM ROW: source + output -->
@@ -193,7 +193,7 @@
 
         const popup = window.open('', elementId, 'width=1000,height=700,resizable=yes');
         popups.push(popup);
-        popup.document.head.innerHTML = `<title>${elementId}</title><style>body{margin:0;background:#09090b;height:100vh;display:flex;flex-direction:column;}${styles}</style>`;
+        popup.document.head.innerHTML = `<title>${elementId}</title><link rel="stylesheet" href="${new URL('fonts/carino-fonts.css', location.href).href}"><style>body{margin:0;background:#050505;height:100vh;display:flex;flex-direction:column;}${styles}</style>`;
         popup.document.body.appendChild(el);
 
         popup.onkeydown = (e) => window.onkeydown(e);
@@ -291,7 +291,9 @@
         try {
             if (!whisperPipe) {
                 setLiveText('Downloading Whisper model (~39 MB, cached after first use)…');
-                const { pipeline } = await import('https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2');
+                const { pipeline, env } = await import('./vendor/transformers/transformers.min.js');
+                env.allowLocalModels = false; // models come from the HF hub (data fetch), lib + wasm are vendored
+                env.backends.onnx.wasm.wasmPaths = new URL('vendor/transformers/', location.href).href;
                 whisperPipe = await pipeline('automatic-speech-recognition', 'Xenova/whisper-tiny');
             }
 
