@@ -47,13 +47,13 @@
     <header class="global-header">
         <h1 style="margin:0; font-family:'Red Hat Display',sans-serif; font-weight:900; font-size:16px; text-transform:uppercase; letter-spacing:.04em; color: var(--accent);">PRO SYNC STUDIO v5</h1>
         <div class="kbd-legend">
-            <span><kbd>ENTER</kbd> Sync</span>
-            <span><kbd>B</kbd> Blank</span>
-            <span><kbd>S</kbd> Skip</span>
-            <span><kbd>Z</kbd> Undo</span>
-            <span><kbd>SPACE</kbd> Play/Pause</span>
+            <span><kbd>ENTER</kbd> <span data-i18n>Sync</span></span>
+            <span><kbd>B</kbd> <span data-i18n>Blank</span></span>
+            <span><kbd>S</kbd> <span data-i18n>Skip</span></span>
+            <span><kbd>Z</kbd> <span data-i18n>Undo</span></span>
+            <span><kbd>SPACE</kbd> <span data-i18n>Play/Pause</span></span>
             <span><kbd>J/L</kbd> ±5s</span>
-            <span><kbd>M</kbd> Mic</span>
+            <span><kbd>M</kbd> <span data-i18n>Mic</span></span>
         </div>
     </header>
 
@@ -62,11 +62,11 @@
         <!-- VIDEO: full-width top row -->
         <div id="videoModule" class="module" style="flex-shrink:0;">
             <div class="module-toolbar">
-                <span class="module-label">Monitor</span>
+                <span class="module-label" data-i18n>Monitor</span>
                 <input type="text" id="ytUrl" placeholder="YouTube URL..." style="background:#050505; border:1px solid var(--border); color:#fff; font-size:10px; padding:4px; width:200px;">
-                <button class="btn" onclick="loadYT()">Load YT</button>
+                <button class="btn" onclick="loadYT()" data-i18n>Load YT</button>
                 <input type="file" id="mediaInput" class="hidden" accept="video/*,audio/*">
-                <button class="btn" onclick="document.getElementById('mediaInput').click()">Local File</button>
+                <button class="btn" onclick="document.getElementById('mediaInput').click()" data-i18n>Local File</button>
                 <select id="speedRate" onchange="setRate(this.value)">
                     <option value="0.5">0.5x</option>
                     <option value="0.75">0.75x</option>
@@ -74,8 +74,8 @@
                     <option value="1.5">1.5x</option>
                     <option value="2">2.0x</option>
                 </select>
-                <button class="btn btn-outline" onclick="togglePlay()">Play/Pause</button>
-                <button class="btn btn-outline" onclick="popOut('videoModule')">Pop-out</button>
+                <button class="btn btn-outline" onclick="togglePlay()" data-i18n>Play/Pause</button>
+                <button class="btn btn-outline" onclick="popOut('videoModule')" data-i18n>Pop-out</button>
             </div>
             <div id="mediaContainer">
                 <video id="localPlayer" controls></video>
@@ -88,9 +88,9 @@
 
             <div id="sourceModule" class="module">
                 <div class="module-toolbar">
-                    <span class="module-label">Source</span>
+                    <span class="module-label" data-i18n>Source</span>
                     <input type="file" id="subImport" class="hidden" accept=".srt,.lrc,.ass">
-                    <button class="btn" onclick="document.getElementById('subImport').click()">Import Script</button>
+                    <button class="btn" onclick="document.getElementById('subImport').click()" data-i18n>Import Script</button>
                     <select id="speechLang">
                         <option value="en-US">EN</option>
                         <option value="es-ES">ES</option>
@@ -104,9 +104,9 @@
                         <option value="ru-RU">RU</option>
                         <option value="ar-SA">AR</option>
                     </select>
-                    <button class="btn btn-outline" id="micBtn" onclick="toggleMic()">Mic</button>
-                    <button class="btn btn-outline" id="autoBtn" onclick="toggleAuto()" title="Auto-submit on silence">Auto</button>
-                    <button class="btn btn-outline" onclick="popOut('sourceModule')">Pop-out</button>
+                    <button class="btn btn-outline" id="micBtn" onclick="toggleMic()" data-i18n>Mic</button>
+                    <button class="btn btn-outline" id="autoBtn" onclick="toggleAuto()" title="Auto-submit on silence" data-i18n>Auto</button>
+                    <button class="btn btn-outline" onclick="popOut('sourceModule')" data-i18n>Pop-out</button>
                 </div>
                 <div id="liveTranscriptBar" class="transcript-bar hidden">
                     <div class="transcript-dot"></div>
@@ -117,11 +117,11 @@
 
             <div id="outputModule" class="module">
                 <div class="module-toolbar">
-                    <span class="module-label">Output</span>
-                    <button class="btn btn-outline" onclick="smartStrip()">Strip</button>
+                    <span class="module-label" data-i18n>Output</span>
+                    <button class="btn btn-outline" onclick="smartStrip()" data-i18n>Strip</button>
                     <button class="btn" onclick="download('srt')">SRT</button>
                     <button class="btn" onclick="download('lrc')">LRC</button>
-                    <button class="btn btn-outline" onclick="popOut('outputModule')">Pop-out</button>
+                    <button class="btn btn-outline" onclick="popOut('outputModule')" data-i18n>Pop-out</button>
                 </div>
                 <textarea id="outputArea" class="output-text"></textarea>
             </div>
@@ -215,12 +215,23 @@
     let chunkTimer = null;
     const CHUNK_MS = 4000;
 
-    const setLiveText = (t) => { document.getElementById('liveTranscript').textContent = t || 'Listening...'; };
+    const setLiveText = (txt) => { document.getElementById('liveTranscript').textContent = txt || t('Listening...'); };
+
+    // Stateful button labels: applyStaticI18n() re-applies whatever key it
+    // captured on the first pass, so a label the app swaps must move its key
+    // with it or a language switch would silently reset the button's state.
+    const setLabel = (el, key) => { if (!el) return; el.dataset.i18nKey = key; el.textContent = t(key); };
+
+    // #liveTranscript holds user speech and therefore carries no data-i18n; only
+    // its idle placeholder follows the language.
+    window.addEventListener('carino:langchange', () => {
+        if (!liveTranscript && !pendingFinal) setLiveText('');
+    });
 
     function toggleAuto() {
         autoSubmit = !autoSubmit;
         const btn = document.getElementById('autoBtn');
-        btn.textContent = autoSubmit ? 'Auto ON' : 'Auto';
+        setLabel(btn, autoSubmit ? 'Auto ON' : 'Auto');
         btn.classList.toggle('btn-mic-on', autoSubmit);
     }
 
@@ -236,9 +247,9 @@
         recorder = null; recorderChunks = [];
         transcribing = false; liveTranscript = ''; pendingFinal = '';
         document.getElementById('micBtn').classList.remove('btn-mic-on');
-        document.getElementById('micBtn').textContent = 'Mic';
+        setLabel(document.getElementById('micBtn'), 'Mic');
         document.getElementById('liveTranscriptBar').classList.add('hidden');
-        setLiveText('Listening...');
+        setLiveText(t('Listening...'));
     }
 
     // Central commit — used by all paths (manual Enter, auto SR, Whisper)
@@ -249,7 +260,7 @@
         outputArea.scrollTop = outputArea.scrollHeight;
         history.push({ type: 'line', text: text.trim() });
         pendingFinal = ''; liveTranscript = '';
-        setLiveText('Listening...');
+        setLiveText(t('Listening...'));
     }
 
     // --- Native SR (Chrome / Edge) ---
@@ -262,14 +273,14 @@
         recognition.onresult = (e) => {
             let interim = '';
             for (let i = e.resultIndex; i < e.results.length; i++) {
-                const t = e.results[i][0].transcript;
+                const tr = e.results[i][0].transcript;
                 if (e.results[i].isFinal) {
-                    if (autoSubmit) { commitLine(t.trim()); return; }
-                    pendingFinal += t + ' ';
-                } else { interim = t; }
+                    if (autoSubmit) { commitLine(tr.trim()); return; }
+                    pendingFinal += tr + ' ';
+                } else { interim = tr; }
             }
             liveTranscript = (pendingFinal + interim).trim();
-            setLiveText(liveTranscript || (interim ? interim + '…' : 'Listening...'));
+            setLiveText(liveTranscript || (interim ? interim + '…' : t('Listening...')));
         };
 
         recognition.onerror = (e) => { if (e.error !== 'no-speech') console.warn('SR:', e.error); };
@@ -278,19 +289,20 @@
         recognition.start();
         transcribing = true;
         document.getElementById('micBtn').classList.add('btn-mic-on');
-        document.getElementById('micBtn').textContent = 'Mic ON';
+        setLabel(document.getElementById('micBtn'), 'Mic ON');
+        setLiveText('');
         document.getElementById('liveTranscriptBar').classList.remove('hidden');
     }
 
     // --- Whisper in-browser (Firefox / any browser via @xenova/transformers) ---
     async function startWhisper() {
         const btn = document.getElementById('micBtn');
-        btn.textContent = 'Loading…'; btn.disabled = true;
+        setLabel(btn, 'Loading…'); btn.disabled = true;
         document.getElementById('liveTranscriptBar').classList.remove('hidden');
 
         try {
             if (!whisperPipe) {
-                setLiveText('Downloading Whisper model (~39 MB, cached after first use)…');
+                setLiveText(t('Downloading Whisper model (~39 MB, cached after first use)…'));
                 const { pipeline, env } = await import('./vendor/transformers/transformers.min.js');
                 env.allowLocalModels = false; // models come from the HF hub (data fetch), lib + wasm are vendored
                 env.backends.onnx.wasm.wasmPaths = new URL('vendor/transformers/', location.href).href;
@@ -331,13 +343,13 @@
             startChunk();
             btn.disabled = false;
             btn.classList.add('btn-mic-on');
-            btn.textContent = 'Mic ON';
-            setLiveText('Listening…');
+            setLabel(btn, 'Mic ON');
+            setLiveText(t('Listening...'));
         } catch (err) {
-            btn.disabled = false; btn.textContent = 'Mic';
+            btn.disabled = false; setLabel(btn, 'Mic');
             document.getElementById('liveTranscriptBar').classList.add('hidden');
             console.error(err);
-            alert('Could not start transcription: ' + err.message);
+            alert(t('Could not start transcription:') + ' ' + err.message);
         }
     }
 
@@ -502,5 +514,6 @@
 </script>
   <script src="carino-navbar.js" data-app="SyncSubs" defer></script>
   <script src="carino-lang.js" defer></script>
+  <script src="i18n.js" defer></script>
 </body>
 </html>
