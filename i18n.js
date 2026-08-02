@@ -6,6 +6,10 @@
 
 const I18N = {
     es: {
+        'Late shift.': 'Turno nocturno.',
+        'Good morning.': 'Buenos días.',
+        'Good afternoon.': 'Buenas tardes.',
+        'Good evening.': 'Buenas noches.',
         // Keyboard legend
         'Sync': 'Sincronizar',
         'Blank': 'Blanco',
@@ -38,6 +42,10 @@ const I18N = {
         'Could not start transcription:': 'No se pudo iniciar la transcripción:',
     },
     'pt-BR': {
+        'Late shift.': 'Turno da noite.',
+        'Good morning.': 'Bom dia.',
+        'Good afternoon.': 'Boa tarde.',
+        'Good evening.': 'Boa noite.',
         'Sync': 'Sincronizar',
         'Blank': 'Em branco',
         'Skip': 'Pular',
@@ -64,6 +72,10 @@ const I18N = {
         'Could not start transcription:': 'Não foi possível iniciar a transcrição:',
     },
     ja: {
+        'Late shift.': '夜勤お疲れさま。',
+        'Good morning.': 'おはようございます。',
+        'Good afternoon.': 'こんにちは。',
+        'Good evening.': 'こんばんは。',
         'Sync': '同期',
         'Blank': '空行',
         'Skip': 'スキップ',
@@ -90,6 +102,10 @@ const I18N = {
         'Could not start transcription:': '文字起こしを開始できませんでした:',
     },
     ru: {
+        'Late shift.': 'Ночная смена.',
+        'Good morning.': 'Доброе утро.',
+        'Good afternoon.': 'Добрый день.',
+        'Good evening.': 'Добрый вечер.',
         'Sync': 'Синхр.',
         'Blank': 'Пустая метка',
         'Skip': 'Пропустить',
