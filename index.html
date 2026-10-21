@@ -13,7 +13,18 @@
     <meta property="og:title" content="Sync Studio">
     <meta property="og:description" content="Fix out-of-sync subtitles and lyrics: shift, stretch and re-time .srt, .lrc and .ass files and preview them, in your browser.">
     <meta property="og:url" content="https://subs.carino.systems/">
-    <meta property="og:image" content="https://subs.carino.systems/logo.webp">
+    <meta property="og:image" content="https://subs.carino.systems/og.jpg">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="Sync Studio">
+    <meta name="twitter:card" content="summary_large_image">
+    <link rel="alternate" hreflang="en" href="https://subs.carino.systems/">
+    <link rel="alternate" hreflang="es" href="https://subs.carino.systems/?lang=es">
+    <link rel="alternate" hreflang="pt-BR" href="https://subs.carino.systems/?lang=pt-BR">
+    <link rel="alternate" hreflang="ja" href="https://subs.carino.systems/?lang=ja">
+    <link rel="alternate" hreflang="ru" href="https://subs.carino.systems/?lang=ru">
+    <link rel="alternate" hreflang="x-default" href="https://subs.carino.systems/">
+    <script type="application/json" id="carino-head-i18n">{"es": {"title": "Sincronizar subtítulos SRT, LRC y ASS | Sync Studio", "desc": "Corrige subtítulos y letras desfasados: desplaza, estira y vuelve a sincronizar archivos .srt, .lrc y .ass y previsualízalos, en tu navegador."}, "pt-BR": {"title": "Sincronizar legendas SRT, LRC e ASS | Sync Studio", "desc": "Corrija legendas e letras fora de sincronia: desloque, estique e ressincronize arquivos .srt, .lrc e .ass e visualize o resultado, no navegador."}, "ja": {"title": "字幕タイミング調整 SRT・LRC・ASS | Sync Studio", "desc": "ずれた字幕や歌詞を修正。.srt・.lrc・.assのずらし、伸縮、タイミング再設定、プレビューまでブラウザで。"}, "ru": {"title": "Синхронизация субтитров — сдвиг SRT, LRC и ASS | Sync Studio", "desc": "Исправьте рассинхрон субтитров и текстов песен: сдвигайте, растягивайте и заново синхронизируйте .srt, .lrc и .ass с предпросмотром — в браузере."}}</script>
     <script type="application/ld+json">{"@context": "https://schema.org", "@type": "WebApplication", "name": "Sync Studio", "url": "https://subs.carino.systems/", "description": "Fix out-of-sync subtitles and lyrics: shift, stretch and re-time .srt, .lrc and .ass files and preview them, in your browser.", "operatingSystem": "Any (runs in a web browser)", "isAccessibleForFree": true, "author": {"@type": "Person", "name": "Miguel Cariño", "url": "https://carino.systems/"}}</script>
     <!-- /carino:head -->
     <link rel="stylesheet" href="fonts/carino-fonts.css">
@@ -68,7 +79,7 @@
         </div>
     </header>
 
-    <div class="main-container" id="workstation">
+    <div class="main-container" role="main" id="workstation">
 
         <!-- VIDEO: full-width top row -->
         <div id="videoModule" class="module" style="flex-shrink:0;">
@@ -78,7 +89,7 @@
                 <button class="btn" onclick="loadYT()" data-i18n>Load YT</button>
                 <input type="file" id="mediaInput" class="hidden" accept="video/*,audio/*">
                 <button class="btn" onclick="document.getElementById('mediaInput').click()" data-i18n>Local File</button>
-                <select id="speedRate" onchange="setRate(this.value)">
+                <select id="speedRate" aria-label="Playback speed" onchange="setRate(this.value)">
                     <option value="0.5">0.5x</option>
                     <option value="0.75">0.75x</option>
                     <option value="1" selected>1.0x</option>
@@ -102,7 +113,7 @@
                     <span class="module-label" data-i18n>Source</span>
                     <input type="file" id="subImport" class="hidden" accept=".srt,.lrc,.ass">
                     <button class="btn" onclick="document.getElementById('subImport').click()" data-i18n>Import Script</button>
-                    <select id="speechLang">
+                    <select id="speechLang" aria-label="Speech recognition language">
                         <option value="en-US">EN</option>
                         <option value="es-ES">ES</option>
                         <option value="fr-FR">FR</option>
@@ -134,7 +145,7 @@
                     <button class="btn" onclick="download('lrc')">LRC</button>
                     <button class="btn btn-outline" onclick="popOut('outputModule')" data-i18n>Pop-out</button>
                 </div>
-                <textarea id="outputArea" class="output-text"></textarea>
+                <textarea id="outputArea" class="output-text" aria-label="Synced output"></textarea>
             </div>
 
         </div>
