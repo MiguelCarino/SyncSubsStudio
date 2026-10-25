@@ -1,7 +1,9 @@
 # Third-party code bundled here
 
 Everything this project needs is vendored: it loads no script, style, font, map
-or module from anywhere but its own origin — no CDN, no network, no account.
+or module from anywhere but its own origin — no CDN, no account. Two things
+reach outside, and only when asked for: "Load YT" fetches YouTube's player
+API, and the Whisper fallback downloads its model from the Hugging Face hub.
 That is the point of the tool, and it makes the licences below *this project's*
 responsibility rather than a package manager's.
 
