@@ -281,6 +281,8 @@
     }
 
     // --- BOOMERANG POP-OUT ---
+    // Window titles name the module the way its header does, in the page's language.
+    const POP_TITLES = { videoModule: 'Monitor', sourceModule: 'Source', outputModule: 'Output' };
     function popOut(elementId) {
         const el = document.getElementById(elementId);
         const placeholder = document.createElement('div');
@@ -289,7 +291,8 @@
 
         const popup = window.open('', elementId, 'width=1000,height=700,resizable=yes');
         popups.push(popup);
-        popup.document.head.innerHTML = `<title>${elementId}</title><link rel="stylesheet" href="${new URL('fonts/carino-fonts.css', location.href).href}"><link rel="stylesheet" href="${new URL('carino-ui.css', location.href).href}"><style>body{margin:0;background:#050505;height:100vh;display:flex;flex-direction:column;}${styles}</style>`;
+        popup.document.head.innerHTML = `<title></title><link rel="stylesheet" href="${new URL('fonts/carino-fonts.css', location.href).href}"><link rel="stylesheet" href="${new URL('carino-ui.css', location.href).href}"><style>body{margin:0;background:#050505;height:100vh;display:flex;flex-direction:column;}${styles}</style>`;
+        popup.document.title = t(POP_TITLES[elementId] || 'Pop-out') + ' · Sync Studio';
         popup.document.body.appendChild(el);
 
         popup.onkeydown = (e) => window.onkeydown(e);

@@ -6,6 +6,12 @@
 
 const I18N = {
     es: {
+        "More": "Más",
+        "Playback speed": "Velocidad de reproducción",
+        "Speech recognition language": "Idioma del reconocimiento de voz",
+        "Synced output": "Resultado sincronizado",
+        "Download .lrc": "Descargar .lrc",
+        "Download .srt": "Descargar .srt",
         'Late shift.': 'Turno nocturno.',
         'Good morning.': 'Buenos días.',
         'Good afternoon.': 'Buenas tardes.',
@@ -63,6 +69,12 @@ const I18N = {
         "Controls": "Controles",
     },
     'pt-BR': {
+        "More": "Mais",
+        "Playback speed": "Velocidade de reprodução",
+        "Speech recognition language": "Idioma do reconhecimento de voz",
+        "Synced output": "Resultado sincronizado",
+        "Download .lrc": "Baixar .lrc",
+        "Download .srt": "Baixar .srt",
         'Late shift.': 'Turno da noite.',
         'Good morning.': 'Bom dia.',
         'Good afternoon.': 'Boa tarde.',
@@ -114,6 +126,12 @@ const I18N = {
         "Controls": "Controles",
     },
     ja: {
+        "More": "その他",
+        "Playback speed": "再生速度",
+        "Speech recognition language": "音声認識の言語",
+        "Synced output": "同期済みの出力",
+        "Download .lrc": ".lrc をダウンロード",
+        "Download .srt": ".srt をダウンロード",
         'Late shift.': '夜勤お疲れさま。',
         'Good morning.': 'おはようございます。',
         'Good afternoon.': 'こんにちは。',
@@ -165,6 +183,12 @@ const I18N = {
         "Controls": "コントロール",
     },
     ru: {
+        "More": "Ещё",
+        "Playback speed": "Скорость воспроизведения",
+        "Speech recognition language": "Язык распознавания речи",
+        "Synced output": "Синхронизированный результат",
+        "Download .lrc": "Скачать .lrc",
+        "Download .srt": "Скачать .srt",
         'Late shift.': 'Ночная смена.',
         'Good morning.': 'Доброе утро.',
         'Good afternoon.': 'Добрый день.',
@@ -224,8 +248,11 @@ function setLocale(l) {
     document.documentElement.lang = LOCALE;
 }
 
+// Reads the fleet language directly: carino-navbar.js's langchange listener can
+// call t() before applyI18n has run setLocale for the new language.
 function t(key) {
-    const dict = I18N[LOCALE];
+    const l = (window.CarinoLang && window.CarinoLang.current) || LOCALE;
+    const dict = I18N[l];
     return (dict && dict[key]) || key;
 }
 
@@ -246,6 +273,22 @@ function applyAttrI18n() {
     if (src) src.placeholder = t('Paste script here, or use Mic to transcribe live...');
     const autoBtn = document.getElementById('autoBtn');
     if (autoBtn) autoBtn.title = t('Auto-submit on silence');
+    // aria-labels and tooltips, by selector; the key is the English markup value.
+    [
+        ['[data-ws-toggle]', 'aria-label', 'Controls'],
+        ['.ws-rail', 'aria-label', 'Controls'],
+        ['#speedRate', 'aria-label', 'Playback speed'],
+        ['#speechLang', 'aria-label', 'Speech recognition language'],
+        ['#outputArea', 'aria-label', 'Synced output'],
+        ['[onclick="download(\'lrc\')"]', 'title', 'Download .lrc'],
+        ['[onclick="download(\'srt\')"]', 'title', 'Download .srt'],
+    ].forEach(([sel, attr, key]) => {
+        document.querySelectorAll(sel).forEach((el) => el.setAttribute(attr, t(key)));
+    });
+    // The live transcript starts as the idle prompt; translate it only while it still is.
+    const live = document.getElementById('liveTranscript');
+    const idle = Object.values(I18N).map((d) => d['Listening...']).concat('Listening...');
+    if (live && idle.includes(live.textContent)) live.textContent = t('Listening...');
 }
 
 // --- Fleet wiring ---
