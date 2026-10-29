@@ -27,6 +27,24 @@
     <script type="application/json" id="carino-head-i18n">{"es": {"title": "Sincronizar subtítulos SRT, LRC y ASS | Sync Studio", "desc": "Corrige subtítulos y letras desfasados: desplaza, estira y vuelve a sincronizar archivos .srt, .lrc y .ass y previsualízalos, en tu navegador."}, "pt-BR": {"title": "Sincronizar legendas SRT, LRC e ASS | Sync Studio", "desc": "Corrija legendas e letras fora de sincronia: desloque, estique e ressincronize arquivos .srt, .lrc e .ass e visualize o resultado, no navegador."}, "ja": {"title": "字幕タイミング調整 SRT・LRC・ASS | Sync Studio", "desc": "ずれた字幕や歌詞を修正。.srt・.lrc・.assのずらし、伸縮、タイミング再設定、プレビューまでブラウザで。"}, "ru": {"title": "Синхронизация субтитров — сдвиг SRT, LRC и ASS | Sync Studio", "desc": "Исправьте рассинхрон субтитров и текстов песен: сдвигайте, растягивайте и заново синхронизируйте .srt, .lrc и .ass с предпросмотром — в браузере."}}</script>
     <script type="application/ld+json">{"@context": "https://schema.org", "@type": "WebApplication", "name": "Sync Studio", "url": "https://subs.carino.systems/", "description": "Fix out-of-sync subtitles and lyrics: shift, stretch and re-time .srt, .lrc and .ass files and preview them, in your browser.", "operatingSystem": "Any (runs in a web browser)", "isAccessibleForFree": true, "author": {"@type": "Person", "name": "Miguel Cariño", "url": "https://carino.systems/"}}</script>
     <!-- /carino:head -->
+    <!-- Theme before first paint, so neither theme flashes the other:
+         ?theme=gold|color (review links; not stored) > carino-theme cookie
+         (shared across *.carino.systems) > localStorage > Gold & Black. -->
+    <meta name="theme-color" content="#050505" id="carinoThemeColor">
+    <script>
+    (function () {
+      var d = document.documentElement, t = null;
+      function pick(v) { return v === 'gold' ? 'gold' : (v === 'color' || v === 'colour') ? 'color' : null; }
+      try { t = pick(new URLSearchParams(location.search).get('theme')); } catch (e) {}
+      if (!t) { try { var m = document.cookie.match(/(?:^|;\s*)carino-theme=([^;]*)/); if (m) t = pick(decodeURIComponent(m[1])); } catch (e) {} }
+      if (!t) { try { t = pick(localStorage.getItem('carino-theme')); } catch (e) {} }
+      t = t || 'gold';
+      d.setAttribute('data-carino-theme', t);
+      var dark = d.getAttribute('data-theme') !== 'light' && window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches;
+      var meta = document.getElementById('carinoThemeColor');
+      if (meta) meta.content = t === 'gold' ? '#050505' : (dark ? '#0e1420' : '#eef3fc');
+    })();
+    </script>
     <link rel="stylesheet" href="fonts/carino-fonts.css">
     <link rel="stylesheet" href="carino-ui.css">
     <style id="mainStyles">
@@ -78,6 +96,20 @@
             #mediaContainer { height: 200px; }
             .ws-rail .input, .ws-rail .select { font-size: 16px; }
         }
+    </style>
+    <!-- Colourful theme + the switch; nothing applies until data-carino-theme="color". -->
+    <link rel="stylesheet" href="carino-theme.css">
+    <style id="themeStyles">
+        /* the hero mark in both colourings; the theme picks one */
+        .mark.mk-color, :root[data-carino-theme="color"] .mark.mk-gold { display: none; }
+        :root[data-carino-theme="color"] .mark.mk-color { display: block; }
+        /* Colourful: carino-theme.css remaps the tokens, so everything that
+           reads one follows. The monitor keeps a black ground once a video or
+           song is in it: it is the picture, not the chrome. A pop-out window
+           gets this sheet and the theme too (popOut). */
+        :root[data-carino-theme="color"] body { background-image: var(--stage-grad); }
+        :root[data-carino-theme="color"] .module { box-shadow: var(--ct-shadow-1); }
+        :root[data-carino-theme="color"] #mediaContainer:not(.empty) { background: #000; }
     </style>
 </head>
 <body>
@@ -160,7 +192,8 @@
             <div id="mediaContainer" class="empty">
                 <!-- Empty state: leaves as soon as a video or song is loaded. -->
                 <div class="short-hero" id="emptyHero">
-                    <img class="mark" src="logo.svg" alt="" width="48" height="48">
+                    <img class="mark mk-gold" src="logo.svg" alt="" width="48" height="48">
+                    <img class="mark mk-color" src="logo-color.svg" alt="" width="48" height="48">
                     <h1><span data-i18n>Sync lyrics and subtitles</span><br><span class="gold" data-i18n>to what you hear.</span></h1>
                     <p class="sh-lede" data-i18n>Load a video or song and paste the lines. Press Enter on each line as it is said, then download SRT or LRC.</p>
                     <div class="sh-input">
@@ -220,6 +253,12 @@
     const sourceText = document.getElementById('sourceText');
     const outputArea = document.getElementById('outputArea');
     const styles = document.getElementById('mainStyles').textContent;
+    const themeStyles = document.getElementById('themeStyles').textContent;
+
+    // A theme switch reaches the pop-outs too.
+    window.addEventListener('carino:themechange', (e) => {
+        popups.forEach(p => { try { if (!p.closed) p.document.documentElement.setAttribute('data-carino-theme', e.detail.theme); } catch(err) {} });
+    });
 
     // Close all child popups when main window closes
     window.addEventListener('beforeunload', () => {
@@ -291,7 +330,8 @@
 
         const popup = window.open('', elementId, 'width=1000,height=700,resizable=yes');
         popups.push(popup);
-        popup.document.head.innerHTML = `<title></title><link rel="stylesheet" href="${new URL('fonts/carino-fonts.css', location.href).href}"><link rel="stylesheet" href="${new URL('carino-ui.css', location.href).href}"><style>body{margin:0;background:#050505;height:100vh;display:flex;flex-direction:column;}${styles}</style>`;
+        popup.document.head.innerHTML = `<title></title><link rel="stylesheet" href="${new URL('fonts/carino-fonts.css', location.href).href}"><link rel="stylesheet" href="${new URL('carino-ui.css', location.href).href}"><style>body{margin:0;background:var(--bg);height:100vh;display:flex;flex-direction:column;}${styles}</style><link rel="stylesheet" href="${new URL('carino-theme.css', location.href).href}"><style>${themeStyles}</style>`;
+        popup.document.documentElement.setAttribute('data-carino-theme', document.documentElement.getAttribute('data-carino-theme') || 'gold');
         popup.document.title = t(POP_TITLES[elementId] || 'Pop-out') + ' · Sync Studio';
         popup.document.body.appendChild(el);
 
@@ -647,6 +687,7 @@
     }
 </script>
   <script src="carino-navbar.js" data-app="SyncSubs" data-repo="SyncSubsStudio" defer></script>
+  <script src="carino-theme.js" data-mark="logo.svg" data-mark-color="logo-color.svg" defer></script>
   <script src="carino-ui.js" defer></script>
   <script src="carino-lang.js" defer></script>
   <script src="i18n.js" defer></script>
