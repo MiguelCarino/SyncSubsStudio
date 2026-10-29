@@ -111,6 +111,8 @@
         :root[data-carino-theme="color"] body { background-image: var(--stage-grad); }
         :root[data-carino-theme="color"] .module { box-shadow: var(--ct-shadow-1); }
         :root[data-carino-theme="color"] #mediaContainer:not(.empty) { background: #000; }
+        /* the three work-area names are labels, not controls: one hue, as on Aldis */
+        :root[data-carino-theme="color"] :is(#videoModule, #sourceModule, #outputModule) .module-label { color: var(--ct-purple); }
     </style>
 </head>
 <body>
