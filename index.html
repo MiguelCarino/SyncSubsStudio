@@ -116,6 +116,28 @@
     </style>
 </head>
 <body>
+<!-- Key words: the navbar shows them, translated, under its Language tab. -->
+<ul data-carino-words hidden>
+  <li>Sync</li>
+  <li>Script</li>
+  <li>Media</li>
+  <li>Mic</li>
+  <li>Keys</li>
+  <li>Monitor</li>
+</ul>
+
+<!-- Bundled libraries: the navbar lists them in its About window, Licence tab. -->
+<ul data-carino-libs data-href="https://github.com/MiguelCarino/SyncSubsStudio/blob/main/vendor/README.md" hidden>
+  <li data-licence="Apache-2.0">Transformers.js</li>
+  <li data-licence="MIT">ONNX Runtime Web</li>
+</ul>
+
+
+<!-- What this page must say: the navbar shows it in its About window. -->
+<div data-carino-about hidden>
+  <p><span><span data-i18n>Runs in your browser. Nothing you add here is uploaded.</span> <span class="pl-also" data-i18n>YouTube videos load from YouTube. In Chrome the mic goes to Google’s speech servers; Whisper downloads its model from Hugging Face.</span></span></p>
+</div>
+
 
     <div class="sub-actions" data-carino-actions>
         <button type="button" class="cs-btn ws-toggle" data-ws-toggle data-priority="1" aria-label="Controls">☰ <span class="ws-toggle-lbl" data-i18n>Controls</span></button>
@@ -178,9 +200,6 @@
                 <span><span class="kbd">M</span> <span class="lbl" data-i18n>Mic</span></span>
             </div>
 
-            <div class="ws-rail-foot">
-                <p class="privacy-line"><span><span data-i18n>Runs in your browser. Nothing you add here is uploaded.</span> <span class="pl-also" data-i18n>YouTube videos load from YouTube. In Chrome the mic goes to Google’s speech servers; Whisper downloads its model from Hugging Face.</span></span></p>
-            </div>
         </aside>
 
         <div class="ws-pane studio">
@@ -206,7 +225,6 @@
                         </div>
                     </div>
                     <div class="examples"><span class="ex-label" data-i18n>Try:</span><button type="button" class="chip-tag" id="sampleBtn" data-i18n>Sample lines</button></div>
-                    <p class="privacy-line" data-i18n>Runs in your browser. Nothing you add here is uploaded.</p>
                 </div>
                 <video id="localPlayer" controls></video>
                 <div id="ytPlayer" class="hidden"></div>
